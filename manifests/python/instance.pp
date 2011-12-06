@@ -8,6 +8,7 @@ define webapp::python::instance($domain,
                                 $django_settings="",
                                 $requirements=false,
                                 $workers=1,
+                                $timeout=30,
                                 $monit_memory_limit=300,
                                 $monit_cpu_limit=50) {
 
@@ -56,6 +57,7 @@ define webapp::python::instance($domain,
     django => $django,
     django_settings => $django_settings,
     workers => $workers,
+    timeout => $timeout,
     require => $ensure ? {
       'present' => Python::Venv::Isolate[$venv],
       default => undef,
