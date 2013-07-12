@@ -12,7 +12,10 @@ define webapp::python::instance($domain,
                                 $workers=1,
                                 $timeout_seconds=30,
                                 $monit_memory_limit=300,
-                                $monit_cpu_limit=50) {
+                                $monit_cpu_limit=50,
+                                $ssl=false,
+                                $ssl_certificate="",
+                                $ssl_certificate_key="") {
 
   $venv = "${webapp::python::venv_root}/$name"
   $src = "${webapp::python::src_root}/$name"
@@ -39,6 +42,9 @@ define webapp::python::instance($domain,
     upstreams => ["unix:${socket}"],
     owner => $owner,
     group => $group,
+    ssl => $ssl,
+    ssl_certificate => $ssl_certificate,
+    ssl_certificate_key => $ssl_certificate_key,
     require => Python::Gunicorn::Instance[$name],
   }
 
