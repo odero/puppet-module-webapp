@@ -16,7 +16,8 @@ define webapp::python::instance($domain,
                                 $monit_cpu_limit=50,
                                 $ssl=false,
                                 $ssl_certificate="",
-                                $ssl_certificate_key="") {
+                                $ssl_certificate_key="",
+                                $environment={}) {
 
   $venv = "${webapp::python::venv_root}/$name"
   $src = "${webapp::python::src_root}/$name"
@@ -69,6 +70,7 @@ define webapp::python::instance($domain,
     paste_settings => $paste_settings,
     workers => $workers,
     timeout_seconds => $timeout_seconds,
+    environment => $environment,
     require => $ensure ? {
       'present' => Python::Venv::Isolate[$venv],
       default => undef,
