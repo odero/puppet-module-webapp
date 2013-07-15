@@ -11,6 +11,7 @@ define webapp::python::instance($domain,
                                 $requirements=false,
                                 $workers=1,
                                 $timeout_seconds=30,
+                                $monit=true,
                                 $monit_memory_limit=300,
                                 $monit_cpu_limit=50,
                                 $ssl=false,
@@ -80,20 +81,22 @@ define webapp::python::instance($domain,
 
   $reload = "/etc/init.d/gunicorn-$name reload"
 
-  monit::monitor { "gunicorn-$name":
-    ensure => $ensure,
-    pidfile => $pidfile,
-    socket => $socket,
-    checks => ["if totalmem > $monit_memory_limit MB for 2 cycles then exec \"$reload\"",
-               "if totalmem > $monit_memory_limit MB for 3 cycles then restart",
-               "if cpu > ${monit_cpu_limit}% for 2 cycles then alert"],
-    require => $ensure ? {
-      'present' => Python::Gunicorn::Instance[$name],
-      default => undef,
-    },
-    before => $ensure ? {
-      'absent' => Python::Gunicorn::Instance[$name],
-      default => undef,
-    },
+  if $monit and $webapp::python::monit {
+    monit::monitor { "gunicorn-$name":
+      ensure => $ensure,
+      pidfile => $pidfile,
+      socket => $socket,
+      checks => ["if totalmem > $monit_memory_limit MB for 2 cycles then exec \"$reload\"",
+                 "if totalmem > $monit_memory_limit MB for 3 cycles then restart",
+                 "if cpu > ${monit_cpu_limit}% for 2 cycles then alert"],
+      require => $ensure ? {
+        'present' => Python::Gunicorn::Instance[$name],
+        default => undef,
+      },
+      before => $ensure ? {
+        'absent' => Python::Gunicorn::Instance[$name],
+        default => undef,
+      },
+    }
   }
 }
