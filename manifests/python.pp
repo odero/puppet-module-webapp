@@ -4,6 +4,7 @@ class webapp::python($ensure=present,
                      $src_root="/usr/local/src",
                      $venv_root="/usr/local/venv",
                      $nginx_workers=1,
+                     $monit=true,
                      $monit_admin="",
                      $monit_interval=60) {
 
@@ -28,10 +29,12 @@ class webapp::python($ensure=present,
     group => $group
   }
 
-  class { monit:
-    ensure => $ensure,
-    admin => $monit_admin,
-    interval => $monit_interval
+  if $monit {
+    class { monit:
+      ensure => $ensure,
+      admin => $monit_admin,
+      interval => $monit_interval
+    }
   }
 
 }
