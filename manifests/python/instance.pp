@@ -14,6 +14,7 @@ define webapp::python::instance($domain,
                                 $monit=true,
                                 $monit_memory_limit=300,
                                 $monit_cpu_limit=50,
+                                $nginx=true,
                                 $ssl=false,
                                 $ssl_certificate="",
                                 $ssl_certificate_key="",
@@ -34,20 +35,22 @@ define webapp::python::instance($domain,
     group => $group,
   }
 
-  nginx::site { $name:
-    ensure => $ensure,
-    domain => $domain,
-    aliases => $aliases,
-    root => "/var/www/$name",
-    mediaroot => $mediaroot,
-    mediaprefix => $mediaprefix,
-    upstreams => ["unix:${socket}"],
-    owner => $owner,
-    group => $group,
-    ssl => $ssl,
-    ssl_certificate => $ssl_certificate,
-    ssl_certificate_key => $ssl_certificate_key,
-    require => Python::Gunicorn::Instance[$name],
+  if $nginx and $webapp::python::nginx {
+    nginx::site { $name:
+      ensure => $ensure,
+      domain => $domain,
+      aliases => $aliases,
+      root => "/var/www/$name",
+      mediaroot => $mediaroot,
+      mediaprefix => $mediaprefix,
+      upstreams => ["unix:${real_socket}"],
+      owner => $owner,
+      group => $group,
+      ssl => $ssl,
+      ssl_certificate => $ssl_certificate,
+      ssl_certificate_key => $ssl_certificate_key,
+      require => Python::Gunicorn::Instance[$name],
+    }
   }
 
   python::venv::isolate { $venv:
