@@ -18,13 +18,17 @@ define webapp::python::instance($domain,
                                 $ssl=false,
                                 $ssl_certificate="",
                                 $ssl_certificate_key="",
+                                $socket=undef,
                                 $environment={}) {
 
   $venv = "${webapp::python::venv_root}/$name"
   $src = "${webapp::python::src_root}/$name"
 
   $pidfile = "${python::gunicorn::rundir}/${name}.pid"
-  $socket = "${python::gunicorn::rundir}/${name}.sock"
+  $real_socket = $socket ? {
+    undef   => "${python::gunicorn::rundir}/${name}.sock",
+    default => $socket,
+  }
 
   $owner = $webapp::python::owner
   $group = $webapp::python::group
@@ -73,6 +77,7 @@ define webapp::python::instance($domain,
     paste_settings => $paste_settings,
     workers => $workers,
     timeout_seconds => $timeout_seconds,
+    socket => $real_socket,
     environment => $environment,
     require => $ensure ? {
       'present' => Python::Venv::Isolate[$venv],
@@ -90,7 +95,7 @@ define webapp::python::instance($domain,
     monit::monitor { "gunicorn-$name":
       ensure => $ensure,
       pidfile => $pidfile,
-      socket => $socket,
+      socket => $real_socket,
       checks => ["if totalmem > $monit_memory_limit MB for 2 cycles then exec \"$reload\"",
                  "if totalmem > $monit_memory_limit MB for 3 cycles then restart",
                  "if cpu > ${monit_cpu_limit}% for 2 cycles then alert"],
