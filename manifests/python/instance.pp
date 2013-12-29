@@ -26,7 +26,7 @@ define webapp::python::instance($domain,
 
   $pidfile = "${python::gunicorn::rundir}/${name}.pid"
   $real_socket = $socket ? {
-    undef   => "${python::gunicorn::rundir}/${name}.sock",
+    undef   => "unix:${python::gunicorn::rundir}/${name}.sock",
     default => $socket,
   }
 
@@ -47,7 +47,7 @@ define webapp::python::instance($domain,
       root => "/var/www/$name",
       mediaroot => $mediaroot,
       mediaprefix => $mediaprefix,
-      upstreams => ["unix:${real_socket}"],
+      upstreams => ["${real_socket}"],
       owner => $owner,
       group => $group,
       ssl => $ssl,
@@ -92,10 +92,16 @@ define webapp::python::instance($domain,
   $reload = "/etc/init.d/gunicorn-$name reload"
 
   if $monit and $webapp::python::monit {
+    $tokens = split($real_socket, ":")
+    if size($tokens) > 1 and $tokens[0] == "unix" {
+      $sock = $tokens[1]
+    } else {
+      $sock = $real_socket
+    }
     monit::monitor { "gunicorn-$name":
       ensure => $ensure,
       pidfile => $pidfile,
-      socket => $real_socket,
+      socket => $sock,
       checks => ["if totalmem > $monit_memory_limit MB for 2 cycles then exec \"$reload\"",
                  "if totalmem > $monit_memory_limit MB for 3 cycles then restart",
                  "if cpu > ${monit_cpu_limit}% for 2 cycles then alert"],
