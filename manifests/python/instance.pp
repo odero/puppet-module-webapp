@@ -19,10 +19,18 @@ define webapp::python::instance($domain,
                                 $ssl_certificate="",
                                 $ssl_certificate_key="",
                                 $socket=undef,
-                                $environment={}) {
+                                $environment={},
+                                $venv=undef,
+                                $src=undef,
+                                $requirements_path=undef) {
 
-  $venv = "${webapp::python::venv_root}/$name"
-  $src = "${webapp::python::src_root}/$name"
+  if !$venv {
+    $venv = "${webapp::python::venv_root}/$name"
+  }
+
+  if !$src {
+    $src = "${webapp::python::src_root}/$name"
+  }
 
   $pidfile = "${python::gunicorn::rundir}/${name}.pid"
   $real_socket = $socket ? {
@@ -57,13 +65,16 @@ define webapp::python::instance($domain,
     }
   }
 
-  python::venv::isolate { $venv:
-    ensure => $ensure,
-    requirements => $requirements ? {
+  if !$requirements_path {
+    $requirements_path = $requirements ? {
       true => "$src/requirements.txt",
       false => undef,
       default => "$src/$requirements",
-    },
+    }
+  }
+  python::venv::isolate { $venv:
+    ensure => $ensure,
+    requirements => $requirements_path,
   }
 
   python::gunicorn::instance { $name:
