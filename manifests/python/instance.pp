@@ -104,7 +104,12 @@ define webapp::python::instance($domain,
 
   if $monit and $webapp::python::monit {
     $tokens = split($real_socket, ":")
-    if defined($tokens[1]) and $tokens[0] == "unix" {
+    $unix_sock = $tokens[1] ? {
+      undef => false,
+      default => $tokens[1],
+    }
+
+    if $unix_sock and $tokens[0] == "unix" {
       $sock = $tokens[1]
     } else {
       $sock = $real_socket
